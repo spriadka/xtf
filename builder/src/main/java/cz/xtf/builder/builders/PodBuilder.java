@@ -1,12 +1,6 @@
 package cz.xtf.builder.builders;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -26,6 +20,7 @@ public class PodBuilder extends AbstractBuilder<Pod, PodBuilder> {
     private final DeploymentConfigBuilder deploymentBuilder;
     private final Set<Volume> volumes = new HashSet<>();
     private final Set<ContainerBuilder> containerBuilders = new HashSet<>();
+    private final Set<ContainerBuilder> initContainerBuilders = new HashSet<>();
     private final Map<String, String> nodeSelectorLabels = new HashMap<>();
 
     private int gracefulShutdown = -1;
@@ -48,6 +43,14 @@ public class PodBuilder extends AbstractBuilder<Pod, PodBuilder> {
 
     public ContainerBuilder container(String name) {
         return getContainerBuilder(name);
+    }
+
+    public ContainerBuilder initContainer() {
+        return initContainer(getName());
+    }
+
+    public ContainerBuilder initContainer(String name) {
+        return getInitContainerBuilder(name);
     }
 
     public Collection<ContainerBuilder> getContainers() {
@@ -119,6 +122,8 @@ public class PodBuilder extends AbstractBuilder<Pod, PodBuilder> {
         PodSpecBuilder specBuilder = new PodSpecBuilder();
 
         specBuilder.withContainers(containerBuilders.stream().map(ContainerBuilder::build).collect(Collectors.toList()));
+        specBuilder
+                .withInitContainers(initContainerBuilders.stream().map(ContainerBuilder::build).collect(Collectors.toList()));
         specBuilder.withDnsPolicy("ClusterFirst");
 
         if (!nodeSelectorLabels.isEmpty()) {
@@ -161,7 +166,7 @@ public class PodBuilder extends AbstractBuilder<Pod, PodBuilder> {
         return this;
     }
 
-    private ContainerBuilder getContainerBuilder(String name) {
+    private ContainerBuilder getContainerBuilderFromBuilders(Collection<ContainerBuilder> containerBuilders, String name) {
         ContainerBuilder result;
         Optional<ContainerBuilder> opt = containerBuilders.stream().filter(bldr -> bldr.getName().equals(name)).findFirst();
         if (opt.isPresent()) {
@@ -172,6 +177,14 @@ public class PodBuilder extends AbstractBuilder<Pod, PodBuilder> {
         }
 
         return result;
+    }
+
+    private ContainerBuilder getContainerBuilder(String name) {
+        return getContainerBuilderFromBuilders(containerBuilders, name);
+    }
+
+    private ContainerBuilder getInitContainerBuilder(String name) {
+        return getContainerBuilderFromBuilders(initContainerBuilders, name);
     }
 
     private static ApplicationBuilder extractApplicationBuilder(DeploymentConfigBuilder dcBuilder) {
