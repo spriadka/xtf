@@ -117,7 +117,7 @@ public class OpenShifts {
                 OpenShiftConfig.adminKubeconfig(), namespace);
     }
 
-    private static OpenShiftBinary getBinary(String token, String username, String password, String kubeconfig,
+    public static OpenShiftBinary getBinary(String token, String username, String password, String kubeconfig,
             String namespace) {
         String ocConfigPath = createUniqueOcConfigFolder().resolve("oc.config").toAbsolutePath().toString();
         OpenShiftBinary openShiftBinary;
