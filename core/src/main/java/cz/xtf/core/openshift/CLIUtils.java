@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,9 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CLIUtils {
 
-    public static String executeCommand(String... args) {
+    public static String executeCommand(Map<String, String> environmentVariables, String... args) {
         ProcessBuilder pb = new ProcessBuilder(args);
-
+        pb.environment().putAll(environmentVariables);
         pb.redirectOutput(ProcessBuilder.Redirect.PIPE);
         pb.redirectError(ProcessBuilder.Redirect.PIPE);
 
@@ -54,5 +56,9 @@ public class CLIUtils {
         }
 
         return null;
+    }
+
+    public static String executeCommand(String... args) {
+        return executeCommand(Collections.emptyMap(), args);
     }
 }

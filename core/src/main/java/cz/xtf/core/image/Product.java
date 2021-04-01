@@ -29,6 +29,10 @@ public class Product {
         return resolveDefaultingProperty("templates.branch");
     }
 
+    public String helmRepositoryRepo() {
+        return resolveDefaultingProperty("helm.repository.repo");
+    }
+
     private String resolveDefaultingProperty(String propertyId) {
         String value = XTFConfig.get("xtf." + id + "." + propertyId);
         String defaultingValue = id.contains(".") ? XTFConfig.get("xtf." + id.replaceAll("\\..*", "") + "." + propertyId)
