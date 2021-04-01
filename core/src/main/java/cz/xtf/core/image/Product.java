@@ -29,8 +29,20 @@ public class Product {
         return resolveDefaultingProperty("templates.branch");
     }
 
-    public String helmRepositoryRepo() {
-        return resolveDefaultingProperty("helm.repository.repo");
+    public String helmChartsRepo() {
+        return resolveDefaultingProperty("helm.charts.repo");
+    }
+
+    public String helmChartsBranch() {
+        return resolveDefaultingProperty("helm.charts.branch");
+    }
+
+    public String helmChartsLocation() {
+        return resolveDefaultingProperty("helm.charts.location");
+    }
+
+    public String helmChartExamplesLocation() {
+        return resolveDefaultingProperty("helm.charts.examples.location");
     }
 
     private String resolveDefaultingProperty(String propertyId) {

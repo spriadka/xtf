@@ -8,16 +8,13 @@ import java.nio.file.Paths;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-
 import cz.xtf.core.config.OpenShiftConfig;
 import cz.xtf.core.config.XTFConfig;
 import cz.xtf.core.http.Https;
 
 public class HelmClients {
 
-    private static final String HELM_CLIENTS_URL = "https://get.helm.sh";
+    private static final String HELM_CLIENTS_URL = "https://mirror.openshift.com/pub/openshift-v4/clients/helm";
     private static final String HELM_FILE_NAME = "helm.tar.gz";
 
     private static HelmBinary adminHelmBinary;
@@ -54,31 +51,23 @@ public class HelmClients {
 
     private static String downloadHelmBinary() {
         String systemType = "";
-        String helmClientVersion = XTFConfig.get("helm.client.version", latestHelmVersion());
         if (SystemUtils.IS_OS_MAC) {
-            systemType = "mac";
+            systemType = "darwin";
         } else {
             systemType = "linux";
         }
-        //https://get.helm.sh/helm-v3.5.3-darwin-amd64.tar.gz
-        String architecture = System.getProperty("os.arch");
-        String helmClientUrl = String.format("%s/helm-%s-%s-%s.tar.gz", HELM_CLIENTS_URL, helmClientVersion, systemType,
-                architecture);
-        return downloadHelmBinaryInternal(helmClientVersion, helmClientUrl, true);
+        String helmClientVersion = XTFConfig.get("helm.client.version", "latest");
+        String helmClientUrl = String.format("%s/%s/helm-%s-amd64.tar.gz", HELM_CLIENTS_URL, helmClientVersion, systemType);
+        return downloadHelmBinary(helmClientUrl, helmClientVersion, systemType, true);
     }
 
-    private static String latestHelmVersion() {
-        String gitApiResponse = Https.getContent("https://api.github.com/repos/helm/helm/releases/latest");
-        Gson gson = new Gson();
-        JsonObject jsonObject = gson.fromJson(gitApiResponse, JsonObject.class);
-        return jsonObject.get("tag_name").getAsString();
-    }
-
-    private static String downloadHelmBinaryInternal(final String version, final String helmClientUrl, final boolean trustAll) {
+    private static String downloadHelmBinary(final String helmClientUrl, String helmClientVersion, String systemType,
+            final boolean trustAll) {
         int code = Https.httpsGetCode(helmClientUrl);
 
         if (code != 200) {
-            throw new IllegalStateException("Client binary for version " + version + " isn't available at " + helmClientUrl);
+            throw new IllegalStateException(
+                    "Helm client binary of version: " + helmClientVersion + " isn't available at " + helmClientUrl);
         }
 
         File workdir = helmBinaryFolder();
@@ -96,12 +85,16 @@ public class HelmClients {
                 FileUtils.copyURLToFile(requestUrl, helmTarFile, 20_000, 300_000);
             }
 
-            CLIUtils.executeCommand("tar", "-xf", helmTarFile.getPath(), "-C", workdir.getPath(), "--strip", "1");
+            CLIUtils.executeCommand("tar", "-xf", helmTarFile.getPath(), "-C", workdir.getPath());
             FileUtils.deleteQuietly(helmTarFile);
-
+            Paths.get(workdir.getPath()).resolve(String.format("helm-%s-amd64", systemType)).toFile()
+                    .renameTo(helmFile);
+            if (!helmFile.canExecute()) {
+                helmFile.setExecutable(true);
+            }
             return helmFile.getAbsolutePath();
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to download and extract oc binary from " + helmClientUrl, e);
+            throw new IllegalStateException("Failed to download and extract helm binary from " + helmClientUrl, e);
         }
     }
 
