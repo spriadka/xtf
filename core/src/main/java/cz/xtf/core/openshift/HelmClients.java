@@ -14,7 +14,8 @@ import cz.xtf.core.http.Https;
 
 public class HelmClients {
 
-    private static final String HELM_CLIENTS_URL = "https://mirror.openshift.com/pub/openshift-v4/clients/helm";
+    private static final String HELM_CLIENTS_URL = XTFConfig.get("helm.clients.url",
+            "https://mirror.openshift.com/pub/openshift-v4/clients/helm");
     private static final String HELM_FILE_NAME = "helm.tar.gz";
 
     private static HelmBinary adminHelmBinary;
@@ -43,9 +44,10 @@ public class HelmClients {
     }
 
     private static HelmBinary getBinary(String token, String username, String password, String kubeconfig,
-            String namespace) {
+                                        String namespace) {
         OpenShiftBinary openShiftBinary = OpenShifts.getBinary(token, username, password, kubeconfig, namespace);
-        return new HelmBinary(downloadHelmBinary(), openShiftBinary.getOcConfigPath());
+        String helmBinaryPath = XTFConfig.get("helm.binary.path", downloadHelmBinary());
+        return new HelmBinary(helmBinaryPath, openShiftBinary.getOcConfigPath());
 
     }
 
@@ -62,7 +64,7 @@ public class HelmClients {
     }
 
     private static String downloadHelmBinary(final String helmClientUrl, String helmClientVersion, String systemType,
-            final boolean trustAll) {
+                                             final boolean trustAll) {
         int code = Https.httpsGetCode(helmClientUrl);
 
         if (code != 200) {
