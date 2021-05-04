@@ -25,8 +25,6 @@ public class HelmClients {
         if (adminHelmBinary == null) {
             adminHelmBinary = getBinary(OpenShiftConfig.adminToken(),
                     OpenShiftConfig.adminUsername(),
-                    OpenShiftConfig.adminPassword(),
-                    OpenShiftConfig.adminKubeconfig(),
                     OpenShiftConfig.namespace());
         }
         return adminHelmBinary;
@@ -36,18 +34,14 @@ public class HelmClients {
         if (masterHelmBinary == null) {
             masterHelmBinary = getBinary(OpenShiftConfig.masterToken(),
                     OpenShiftConfig.masterUsername(),
-                    OpenShiftConfig.masterPassword(),
-                    OpenShiftConfig.masterKubeconfig(),
                     OpenShiftConfig.namespace());
         }
         return masterHelmBinary;
     }
 
-    private static HelmBinary getBinary(String token, String username, String password, String kubeconfig,
-                                        String namespace) {
-        OpenShiftBinary openShiftBinary = OpenShifts.getBinary(token, username, password, kubeconfig, namespace);
+    private static HelmBinary getBinary(String token, String username, String namespace) {
         String helmBinaryPath = XTFConfig.get("helm.binary.path", downloadHelmBinary());
-        return new HelmBinary(helmBinaryPath, openShiftBinary.getOcConfigPath());
+        return new HelmBinary(helmBinaryPath, username, token, namespace);
 
     }
 
@@ -64,7 +58,7 @@ public class HelmClients {
     }
 
     private static String downloadHelmBinary(final String helmClientUrl, String helmClientVersion, String systemType,
-                                             final boolean trustAll) {
+            final boolean trustAll) {
         int code = Https.httpsGetCode(helmClientUrl);
 
         if (code != 200) {
